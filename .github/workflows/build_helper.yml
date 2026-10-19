@@ -1,0 +1,49 @@
+name: Build Native Overlay APK
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Create Clean Android Structure
+        run: |
+          mkdir -p app/src/main/java/com/aimtool/overlay
+          
+          # Move files to exact Android path
+          [ -f "AndroidManifest.xml" ] && mv AndroidManifest.xml app/src/main/
+          [ -f "OverlayService.java" ] && mv OverlayService.java app/src/main/java/com/aimtool/overlay/
+
+          # Root settings
+          echo "include ':app'" > settings.gradle
+
+          # Root build.gradle
+          echo "buildscript { repositories { google(); mavenCentral() }; dependencies { classpath 'com.android.tools.build:gradle:7.4.2' } }" > build.gradle
+          echo "allprojects { repositories { google(); mavenCentral() } }" >> build.gradle
+
+          # App build.gradle
+          echo "apply plugin: 'com.android.application'" > app/build.gradle
+          echo "android { compileSdkVersion 33; defaultConfig { applicationId 'com.aimtool.overlay'; minSdkVersion 21; targetSdkVersion 33; versionCode 1; versionName '1.0' } }" >> app/build.gradle
+
+      - name: Build APK with Gradle
+        run: gradle assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: AimTool-Overlay-APK
+          path: app/build/outputs/apk/debug/app-debug.apk
+          
