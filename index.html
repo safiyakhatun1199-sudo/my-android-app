@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>8 Ball Pool Aim Tool</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #121212;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        #canvas-container {
+            position: relative;
+            width: 100vw;
+            height: 70vh;
+            background: #076324; /* Pool Table Green */
+            border: 10px solid #5c3a21;
+            box-sizing: border-box;
+            touch-action: none;
+        }
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        .controls {
+            padding: 15px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #ff9800;
+            border: none;
+            color: white;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>8 Ball Pool Aim Tool Helper</h2>
+    <p>স্ক্রিনে দুই আঙুল বা টাচ করে বল ও টার্গেটের লাইন অ্যাডজাস্ট করুন</p>
+
+    <div id="canvas-container">
+        <canvas id="aimCanvas"></canvas>
+    </div>
+
+    <div class="controls">
+        <button onclick="resetAim()">Reset Lines</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('aimCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        }
+        resizeCanvas();
+
+        let cueBall = { x: canvas.width * 0.3, y: canvas.height * 0.5 };
+        let targetBall = { x: canvas.width * 0.6, y: canvas.height * 0.4 };
+        let pocket = { x: canvas.width * 0.9, y: canvas.height * 0.1 };
+
+        let activeBall = null;
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 1. Draw Pocket
+            ctx.beginPath();
+            ctx.arc(pocket.x, pocket.y, 25, 0, Math.PI * 2);
+            ctx.fillStyle = '#000000';
+            ctx.fill();
+            ctx.closePath();
+
+            // 2. Draw Cue Ball (White)
+            ctx.beginPath();
+            ctx.arc(cueBall.x, cueBall.y, 15, 0, Math.PI * 2);
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fill();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#000';
+            ctx.stroke();
+            ctx.closePath();
+
+            // 3. Draw Target Ball (Red)
+            ctx.beginPath();
+            ctx.arc(targetBall.x, targetBall.y, 15, 0, Math.PI * 2);
+            ctx.fillStyle = '#FF0000';
+            ctx.fill();
+            ctx.closePath();
+
+            // 4. Draw Aim Line (White to Red Ball)
+            ctx.beginPath();
+            ctx.moveTo(cueBall.x, cueBall.y);
+            ctx.lineTo(targetBall.x, targetBall.y);
+            ctx.strokeStyle = 'yellow';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([5, 5]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // 5. Draw Prediction Target Line (Red Ball to Pocket)
+            ctx.beginPath();
+            ctx.moveTo(targetBall.x, targetBall.y);
+            ctx.lineTo(pocket.x, pocket.y);
+            ctx.strokeStyle = '#00FF00'; // Green for success line
+            ctx.lineWidth = 3;
+            ctx.stroke();
+        }
+
+        // Touch and Drag Controls
+        canvas.addEventListener('touchstart', (e) => {
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+
+            if (Math.hypot(x - cueBall.x, y - cueBall.y) < 30) {
+                activeBall = 'cue';
+            } else if (Math.hypot(x - targetBall.x, y - targetBall.y) < 30) {
+                activeBall = 'target';
+            }
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            if (!activeBall) return;
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+
+            if (activeBall === 'cue') {
+                cueBall.x = x;
+                cueBall.y = y;
+            } else if (activeBall === 'target') {
+                targetBall.x = x;
+                targetBall.y = y;
+            }
+            draw();
+        });
+
+        canvas.addEventListener('touchend', () => { activeBall = null; });
+
+        function resetAim() {
+            cueBall = { x: canvas.width * 0.3, y: canvas.height * 0.5 };
+            targetBall = { x: canvas.width * 0.6, y: canvas.height * 0.4 };
+            draw();
+        }
+
+        draw();
+    </script>
+</body>
+</html>
